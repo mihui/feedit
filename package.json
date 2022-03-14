@@ -1,0 +1,29 @@
+{
+  "name": "streamit",
+  "version": "1.0.0",
+  "description": "Stream file from a place to your target",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --timeout=10000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mihui/streamit.git"
+  },
+  "keywords": [
+    "video",
+    "streaming"
+  ],
+  "author": "Michael",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/mihui/streamit/issues"
+  },
+  "homepage": "https://github.com/mihui/streamit#readme",
+  "devDependencies": {
+    "mocha": "^9.2.2"
+  },
+  "dependencies": {
+    "axios": "^0.26.1"
+  }
+}
