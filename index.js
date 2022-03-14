@@ -5,7 +5,7 @@ const STATUS_OK = 200;
 const STATUS_PARTIAL_CONTENT = 206;
 const BUFFER_SIZE = 1024 * 1000 * 1;
 
-class StreamIt {
+class FeedIt {
 
   /**
    * Get HTTP(s) client
@@ -53,7 +53,7 @@ class StreamIt {
    */
   async stream(opts, callback) {
 
-    const { url, range, method = GET } = opts;
+    const { url, range, method = 'GET' } = opts;
 
     const httpClient = this.#httpClient(url);
 
@@ -88,4 +88,4 @@ class StreamIt {
   }
 }
 
-module.exports = new StreamIt();
+module.exports = new FeedIt();

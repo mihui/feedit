@@ -1,5 +1,5 @@
 {
-  "name": "streamit",
+  "name": "feedit",
   "version": "1.0.0",
   "description": "Stream file from a place to your target",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mihui/streamit.git"
+    "url": "git+https://github.com/mihui/feedit.git"
   },
   "keywords": [
     "video",
@@ -17,9 +17,9 @@
   "author": "Michael",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/mihui/streamit/issues"
+    "url": "https://github.com/mihui/feedit/issues"
   },
-  "homepage": "https://github.com/mihui/streamit#readme",
+  "homepage": "https://github.com/mihui/feedit#readme",
   "devDependencies": {
     "mocha": "^9.2.2"
   },
