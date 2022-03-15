@@ -13,7 +13,7 @@ class FeedIt {
    * @param {string} url URL
    * @returns {http | https} Returns HTTP(s) instance
    */
-  #httpClient (url) {
+  httpClient (url) {
     const analyzedUrl = new URL(url);
     if(analyzedUrl.protocol === 'https:') {
       return https;
@@ -28,7 +28,7 @@ class FeedIt {
    * @param {*} size Content length
    * @returns {{start: number, end: number}} Positions
    */
-  #getRange(range, size) {
+  getRange(range, size) {
     let start = 0;
     let end = 0;
 
@@ -55,7 +55,7 @@ class FeedIt {
 
     const { url, range, method = 'GET' } = opts;
 
-    const httpClient = this.#httpClient(url);
+    const httpClient = this.httpClient(url);
 
     const response = await axios({ url, method: 'HEAD' });
     const fileHeaders = response.headers;
@@ -71,7 +71,7 @@ class FeedIt {
 
     status = STATUS_PARTIAL_CONTENT;
 
-    const { start, end } = this.#getRange(range, size);
+    const { start, end } = this.getRange(range, size);
     let chunkSize = end - start + 1;
 
     headers['content-range'] = `bytes ${start}-${end}/${size}`;
