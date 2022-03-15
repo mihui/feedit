@@ -36,7 +36,7 @@ class FeedIt {
       const parts = range.replace(/bytes=/, '').split('-');
       start = parts[0] ? parseInt(parts[0], 10) : 0;
       const partialEnd = parts[1] ? parseInt(parts[1], 10) : undefined;
-      end = partialEnd ?? Math.min(start + BUFFER_SIZE, size - 1);
+      end = partialEnd ? partialEnd : Math.min(start + BUFFER_SIZE, size - 1);
     }
     else {
       end = Math.min(start + BUFFER_SIZE, size - 1);
@@ -59,8 +59,8 @@ class FeedIt {
 
     const response = await axios({ url, method: 'HEAD' });
     const fileHeaders = response.headers;
-    const size = fileHeaders['content-length'];
-    const contentType = fileHeaders['content-type'] ?? 'application/octet-stream';
+    const size = Object.prototype.hasOwnProperty.call(fileHeaders, 'content-length') ? fileHeaders['content-length'] : 1;
+    const contentType = Object.prototype.hasOwnProperty.call(fileHeaders, 'content-type') ? fileHeaders['content-type'] : 'application/octet-stream';
     let status = STATUS_OK;
     let headers = { 'accept-ranges': 'bytes', 'connection': 'keep-alive', 'content-type': contentType };
 
