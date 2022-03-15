@@ -1,6 +1,6 @@
 {
   "name": "feedit",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Stream file from a place to your target",
   "main": "index.js",
   "scripts": {
