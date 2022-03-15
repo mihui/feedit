@@ -5,6 +5,7 @@ export interface FeedItOptions {
   range: string;
   method: string;
   max_buffer_size?: Number;
+  min_buffer_size?: Number;
   cache_dir?: string;
 }
 
@@ -13,4 +14,4 @@ export interface FeedItMetadata {
   headers: Record<string, any>;
 }
 
-export function stream(opts: FeedItOptions, callback: (data: http.IncomingMessage, meta: FeedItMetadata) => void): Promise<void>;
+export function stream(opts: FeedItOptions, callback: (data: http.IncomingMessage, meta: FeedItMetadata) => void): Promise<any>;

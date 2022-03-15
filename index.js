@@ -11,6 +11,7 @@ const STATUS_OK = 200;
 const STATUS_PARTIAL_CONTENT = 206;
 const FILE_HASH_SECRET = 'badges';
 const DEFAULT_BUFFER_SIZE = 1024 * 1000 * 1;
+const MIN_BUFFER_SIZE = 1024 * 1000 * 1;
 const MAX_BUFFER_SIZE = 1024 * 1000 * 10;
 const DEFAULT_CACHE_DIR = '.feedit';
 
@@ -23,35 +24,46 @@ class FeedIt {
   getHashedName() { return this.hashedName; }
 
   /**
-   * Calculate bitrage and cache it
+   * Calculate buffer size and cache it
    * 
    * @param {string} url URL
    * @param {number} max_buffer_size Maximum buffer size of the file
+   * @param {number} min_buffer_size Minimize buffer size of the file
    * @param {string} cache_dir Directory for storing cached files
+   * @param {boolean} debug Debug
    */
-  calculateBufferSize(url, max_buffer_size, cache_dir) {
+  calculateBufferSize(url, max_buffer_size, min_buffer_size, cache_dir, debug) {
     const md5Hasher = crypto.createHmac('md5', FILE_HASH_SECRET);
     this.hashedName = `${md5Hasher.update(url).digest('hex')}`;
     const cacheDir = path.resolve(cache_dir);
     try {
       if(fs.existsSync(cacheDir) === false) {
         fs.mkdirSync(cacheDir);
+        if(debug) {
+          console.warn('CREATED CACHE FOLDER');
+        }
       }
     }
     catch (err) {
-      console.warn('NO VIDEO PROBE FOLDER, PLEASE CHECK IF YOU HAVE ACCESS TO THIS FOLDER');
-      return console.warn(cacheDir);
+      if(debug) {
+        console.warn('NO VIDEO PROBE FOLDER, PLEASE CHECK IF YOU HAVE ACCESS TO THIS FOLDER');
+        console.warn(cacheDir);
+      }
+      return;
     }
     const detectedFile = path.resolve(cache_dir, this.getHashedName());
     try {
       if(fs.statSync(detectedFile).isFile()) {
         const data = fs.readFileSync(detectedFile, { flag: 'r' });
         const rawBitrate = data.toString('utf-8');
-        this.bufferSize = Math.min(max_buffer_size, (Number(rawBitrate) === NaN ? 0 : Number(rawBitrate))); // bps
+        this.bufferSize = Math.min(max_buffer_size, Math.max((Number(rawBitrate) === NaN ? 0 : Number(rawBitrate)), min_buffer_size)); // bps
+        return;
       }
     }
     catch(err) {
-      console.warn('NO VIDEO PROBE CACHE');
+      if(debug) {
+        console.warn('NO VIDEO PROBE CACHE');
+      }
     }
     try {
       // Next time the file will be read
@@ -65,11 +77,16 @@ class FeedIt {
         if(err) { return; }
         fs.writeFile(detectedFile, stdout, (err) => {
           if(err) return console.warn(err);
+          if(debug) {
+            console.warn('CREATED VIDEO PROBE CACHE');
+          }
         });
       });
     }
     catch(err) {
-      console.warn('NO VIDEO PROBE RESULT');
+      if(debug) {
+        console.warn('NO VIDEO PROBE RESULT');
+      }
     }
   }
 
@@ -111,13 +128,13 @@ class FeedIt {
   /**
    * Stream resource
    * 
-   * @param {{ url: string, range: string, method: string, max_buffer_size: number, cache_dir: string }} opts Options
+   * @param {{ url: string, range: string, method: string, max_buffer_size: number, min_buffer_size: number, cache_dir: string, debug: boolean }} opts Options
    * @param {(data: http.IncomingMessage, { status: number, headers: object }) => void} callback 
    * @returns {Promise<any>} Returns callback's return value
    */
   async stream(opts, callback) {
 
-    const { url, range, method = 'GET', max_buffer_size = MAX_BUFFER_SIZE, cache_dir = DEFAULT_CACHE_DIR } = opts;
+    const { url, range, method = 'GET', max_buffer_size = MAX_BUFFER_SIZE, min_buffer_size = MIN_BUFFER_SIZE, cache_dir = DEFAULT_CACHE_DIR, debug = false } = opts;
     // Determine the HTTP client
     const httpClient = this.httpClient(url);
     // TODO: Replace with the native HttpClient
@@ -133,7 +150,7 @@ class FeedIt {
       return callback(null, { status, headers });
     }
 
-    this.calculateBufferSize(url, max_buffer_size, cache_dir);
+    this.calculateBufferSize(url, max_buffer_size, min_buffer_size, cache_dir, debug);
     status = STATUS_PARTIAL_CONTENT;
     const { start, end } = this.getRange(range, size);
     let chunkSize = end - start + 1;

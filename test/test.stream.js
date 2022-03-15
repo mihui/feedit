@@ -22,6 +22,16 @@ describe('Test Data Streaming', () => {
       done();
     }).catch(err => {
       console.log('### ERROR.2 ###');
+      console.error(err);
+      done();
+    });
+  });
+
+  it('Should be error', (done) => {
+    feedIt.stream({ url: 'https://www.nothing', range: 'bytes=0-1', method: 'GET' }, (data, meta) => {
+      console.log(meta);
+      done();
+    }).catch(err => {
       done();
     });
   });
