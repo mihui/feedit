@@ -1,6 +1,6 @@
 # Feed It
 
-Stream file from a place to your target
+Stream video file from a place to your target
 
 ## Usage
 
