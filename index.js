@@ -7,12 +7,12 @@ const fs = require('fs'),
 const ffprobe = require('@ffprobe-installer/ffprobe').path;
 const { exec } = require('child_process');
 
-// Consts
 const STATUS_OK = 200;
 const STATUS_PARTIAL_CONTENT = 206;
 const FILE_HASH_SECRET = 'badges';
 const DEFAULT_BUFFER_SIZE = 1024 * 1000 * 1;
 const MAX_BUFFER_SIZE = 1024 * 1000 * 10;
+const DEFAULT_CACHE_DIR = '.feedit';
 
 class FeedIt {
 
@@ -27,11 +27,22 @@ class FeedIt {
    * 
    * @param {string} url URL
    * @param {number} max_buffer_size Maximum buffer size of the file
+   * @param {string} cache_dir Directory for storing cached files
    */
-  calculateBufferSize(url, max_buffer_size) {
+  calculateBufferSize(url, max_buffer_size, cache_dir) {
     const md5Hasher = crypto.createHmac('md5', FILE_HASH_SECRET);
-    this.hashedName = `cached_${md5Hasher.update(url).digest('hex')}`;
-    const detectedFile = path.resolve(this.getHashedName());
+    this.hashedName = `${md5Hasher.update(url).digest('hex')}`;
+    const cacheDir = path.resolve(cache_dir);
+    try {
+      if(fs.existsSync(cacheDir) === false) {
+        fs.mkdirSync(cacheDir);
+      }
+    }
+    catch (err) {
+      console.warn('NO VIDEO PROBE FOLDER, PLEASE CHECK IF YOU HAVE ACCESS TO THIS FOLDER');
+      return console.warn(cacheDir);
+    }
+    const detectedFile = path.resolve(cache_dir, this.getHashedName());
     try {
       if(fs.statSync(detectedFile).isFile()) {
         const data = fs.readFileSync(detectedFile, { flag: 'r' });
@@ -40,7 +51,7 @@ class FeedIt {
       }
     }
     catch(err) {
-      console.log('NO VIDEO PROBE CACHE');
+      console.warn('NO VIDEO PROBE CACHE');
     }
     try {
       // Next time the file will be read
@@ -100,13 +111,13 @@ class FeedIt {
   /**
    * Stream resource
    * 
-   * @param {{ url: string, range: string, method: string }} opts Options
+   * @param {{ url: string, range: string, method: string, max_buffer_size: number, cache_dir: string }} opts Options
    * @param {(data: http.IncomingMessage, { status: number, headers: object }) => void} callback 
    * @returns {Promise<any>} Returns callback's return value
    */
   async stream(opts, callback) {
 
-    const { url, range, method = 'GET', max_buffer_size = MAX_BUFFER_SIZE } = opts;
+    const { url, range, method = 'GET', max_buffer_size = MAX_BUFFER_SIZE, cache_dir = DEFAULT_CACHE_DIR } = opts;
     // Determine the HTTP client
     const httpClient = this.httpClient(url);
     // TODO: Replace with the native HttpClient
@@ -122,14 +133,13 @@ class FeedIt {
       return callback(null, { status, headers });
     }
 
-    this.calculateBufferSize(url, max_buffer_size);
+    this.calculateBufferSize(url, max_buffer_size, cache_dir);
     status = STATUS_PARTIAL_CONTENT;
     const { start, end } = this.getRange(range, size);
     let chunkSize = end - start + 1;
 
     headers['content-range'] = `bytes ${start}-${end}/${size}`;
     headers['content-length'] = chunkSize;
-    headers['x-range'] = `${start}-${end}`;
 
     httpClient.get(url, {
       headers: { Range: `bytes=${start}-${end}`, connection: 'keep-alive' }

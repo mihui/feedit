@@ -26,5 +26,6 @@
   "dependencies": {
     "@ffprobe-installer/ffprobe": "^1.4.1",
     "axios": "^0.26.1"
-  }
+  },
+  "types": "./types.d.ts"
 }
