@@ -24,6 +24,7 @@
     "mocha": "^9.2.2"
   },
   "dependencies": {
+    "@ffprobe-installer/ffprobe": "^1.4.1",
     "axios": "^0.26.1"
   }
 }

@@ -1,11 +1,66 @@
 const axios = require('axios');
 const http = require('http'), 
       https = require('https');
+const crypto = require('crypto');
+const fs = require('fs'),
+      path = require('path');
+const ffprobe = require('@ffprobe-installer/ffprobe').path;
+const { exec } = require('child_process');
+
+// Consts
 const STATUS_OK = 200;
 const STATUS_PARTIAL_CONTENT = 206;
-const BUFFER_SIZE = 1024 * 1000 * 1;
+const FILE_HASH_SECRET = 'badges';
+const DEFAULT_BUFFER_SIZE = 1024 * 1000 * 1;
+const MAX_BUFFER_SIZE = 1024 * 1000 * 10;
 
 class FeedIt {
+
+  bufferSize = DEFAULT_BUFFER_SIZE;
+  hashedName = '';
+
+  getBufferSize() { return this.bufferSize; }
+  getHashedName() { return this.hashedName; }
+
+  /**
+   * Calculate bitrage and cache it
+   * 
+   * @param {string} url URL
+   * @param {number} max_buffer_size Maximum buffer size of the file
+   */
+  calculateBufferSize(url, max_buffer_size) {
+    const md5Hasher = crypto.createHmac('md5', FILE_HASH_SECRET);
+    this.hashedName = `cached_${md5Hasher.update(url).digest('hex')}`;
+    const detectedFile = path.resolve(this.getHashedName());
+    try {
+      if(fs.statSync(detectedFile).isFile()) {
+        const data = fs.readFileSync(detectedFile, { flag: 'r' });
+        const rawBitrate = data.toString('utf-8');
+        this.bufferSize = Math.min(max_buffer_size, (Number(rawBitrate) === NaN ? 0 : Number(rawBitrate))); // bps
+      }
+    }
+    catch(err) {
+      console.log('NO VIDEO PROBE CACHE');
+    }
+    try {
+      // Next time the file will be read
+      exec([
+        ffprobe,
+        '-v', 'error',
+        '-show_entries', 'format=bit_rate',
+        '-of', 'csv="p=0"',
+        url
+      ].join(' '), (err, stdout, stderr) => {
+        if(err) { return; }
+        fs.writeFile(detectedFile, stdout, (err) => {
+          if(err) return console.warn(err);
+        });
+      });
+    }
+    catch(err) {
+      console.warn('NO VIDEO PROBE RESULT');
+    }
+  }
 
   /**
    * Get HTTP(s) client
@@ -15,9 +70,7 @@ class FeedIt {
    */
   httpClient (url) {
     const analyzedUrl = new URL(url);
-    if(analyzedUrl.protocol === 'https:') {
-      return https;
-    }
+    if(analyzedUrl.protocol === 'https:') { return https; }
     return http;
   };
 
@@ -36,10 +89,10 @@ class FeedIt {
       const parts = range.replace(/bytes=/, '').split('-');
       start = parts[0] ? parseInt(parts[0], 10) : 0;
       const partialEnd = parts[1] ? parseInt(parts[1], 10) : undefined;
-      end = partialEnd ? partialEnd : Math.min(start + BUFFER_SIZE, size - 1);
+      end = partialEnd ? partialEnd : Math.min(start + this.getBufferSize(), size - 1);
     }
     else {
-      end = Math.min(start + BUFFER_SIZE, size - 1);
+      end = Math.min(start + this.getBufferSize(), size - 1);
     }
     return { start, end };
   }
@@ -53,10 +106,10 @@ class FeedIt {
    */
   async stream(opts, callback) {
 
-    const { url, range, method = 'GET' } = opts;
-
+    const { url, range, method = 'GET', max_buffer_size = MAX_BUFFER_SIZE } = opts;
+    // Determine the HTTP client
     const httpClient = this.httpClient(url);
-
+    // TODO: Replace with the native HttpClient
     const response = await axios({ url, method: 'HEAD' });
     const fileHeaders = response.headers;
     const size = Object.prototype.hasOwnProperty.call(fileHeaders, 'content-length') ? fileHeaders['content-length'] : 1;
@@ -69,8 +122,8 @@ class FeedIt {
       return callback(null, { status, headers });
     }
 
+    this.calculateBufferSize(url, max_buffer_size);
     status = STATUS_PARTIAL_CONTENT;
-
     const { start, end } = this.getRange(range, size);
     let chunkSize = end - start + 1;
 
