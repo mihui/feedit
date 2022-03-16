@@ -2,16 +2,16 @@ import http from 'http';
 
 export interface FeedItOptions {
   url: string;
-  range: string;
+  range: string | string[];
   method: string;
-  max_buffer_size?: Number;
-  min_buffer_size?: Number;
+  max_buffer_size?: number;
+  min_buffer_size?: number;
   cache_dir?: string;
 }
 
 export interface FeedItMetadata {
-  status: Number;
-  headers: Record<string, any>;
+  status: number;
+  headers: http.OutgoingHttpHeader;
 }
 
 export function stream(opts: FeedItOptions, callback: (data: http.IncomingMessage, meta: FeedItMetadata) => void): Promise<any>;
