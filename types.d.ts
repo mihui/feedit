@@ -11,7 +11,7 @@ export interface FeedItOptions {
 
 export interface FeedItMetadata {
   status: number;
-  headers: http.OutgoingHttpHeader;
+  headers: http.OutgoingHttpHeaders;
 }
 
 export function stream(opts: FeedItOptions, callback: (data: http.IncomingMessage, meta: FeedItMetadata) => void): Promise<any>;
