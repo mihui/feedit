@@ -10,14 +10,20 @@ const { exec } = require('child_process');
 const STATUS_OK = 200;
 const STATUS_PARTIAL_CONTENT = 206;
 const FILE_HASH_SECRET = 'badges';
+const DEFAULT_BUFFER_SIZE = ;
 const MIN_BUFFER_SIZE = 1024 * 1000 * 1;
 const MAX_BUFFER_SIZE = 1024 * 1000 * 10;
 const DEFAULT_CACHE_DIR = '.feedit';
 
 class FeedIt {
 
-  bufferSize = 1024 * 1000 * 1;
-  hashedName = '';
+  bufferSize;
+  hashedName;
+
+  constructor() {
+    this.bufferSize = DEFAULT_BUFFER_SIZE;
+    this.hashedName = '';  
+  }
 
   getBufferSize() { return this.bufferSize; }
   getHashedName() { return this.hashedName; }
