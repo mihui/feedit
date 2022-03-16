@@ -17,9 +17,6 @@ const DEFAULT_CACHE_DIR = '.feedit';
 
 class FeedIt {
 
-  bufferSize;
-  hashedName;
-
   constructor() {
     this.bufferSize = DEFAULT_BUFFER_SIZE;
     this.hashedName = '';  
